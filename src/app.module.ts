@@ -1,20 +1,23 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule, type JwtModuleOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule, type TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import appConfig from './config/app.config';
+import authConfig from './config/auth.config';
 import databaseConfig from './config/database.config';
 import { GiftsModule } from './gift/gifts.module';
+
+import type { StringValue } from 'ms';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig],
+      load: [appConfig, authConfig, databaseConfig],
       envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync({
@@ -24,11 +27,12 @@ import { GiftsModule } from './gift/gifts.module';
     }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
+      global: true,
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.getOrThrow<string>('app.jwtSecret'),
+      useFactory: (configService: ConfigService): JwtModuleOptions => ({
+        secret: configService.getOrThrow<string>('auth.jwtSecret'),
         signOptions: {
-          expiresIn: configService.getOrThrow<number>('app.jwtExpiresIn'),
+          expiresIn: configService.getOrThrow<StringValue>('auth.jwtExpiresIn'),
         },
       }),
     }),

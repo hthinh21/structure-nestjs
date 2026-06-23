@@ -10,10 +10,10 @@ export class GiftCampaignEntity extends BaseEntity {
   @Column({ name: 'description', type: 'text', nullable: true })
   description?: string;
 
-  @Column({ name: 'start_date', type: 'datetime' })
+  @Column({ name: 'start_date', type: 'timestamptz' })
   startDate!: Date;
 
-  @Column({ name: 'end_date', type: 'datetime' })
+  @Column({ name: 'end_date', type: 'timestamptz' })
   endDate!: Date;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })

@@ -38,5 +38,7 @@ export default registerAs('database', (): TypeOrmModuleOptions => {
       idleTimeoutMillis: 30_000, // Close idle connections after 30s
       connectionTimeoutMillis: 2_000, // Fail fast if DB unreachable after 2s
     },
+
+    
   };
 });

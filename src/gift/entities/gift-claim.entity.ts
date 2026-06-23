@@ -23,7 +23,7 @@ export class GiftClaimEntity extends BaseEntity {
   })
   status!: GiftClaimStatus;
 
-  @Column({ name: 'claimed_at', type: 'datetime' })
+  @Column({ name: 'claimed_at', type: 'timestamptz' })
   claimedAt!: Date;
 
   @ManyToOne(() => GiftEntity, (gift) => gift.claims, { onDelete: 'RESTRICT' })
