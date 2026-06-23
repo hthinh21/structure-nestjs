@@ -2,8 +2,10 @@ import { BadRequestException, Injectable, Logger, NotFoundException } from '@nes
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { plainToInstance } from 'class-transformer';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
+import { PaginationDto } from '../../common/dtos/requests/pagination-request.dto';
+import { PaginatedResponseDto } from '../../common/dtos/responses/paginated-response.dto';
 import { ClaimedGiftResponseDto } from '../dtos/responses/users/claimed-gift.response.dto';
 import { UserGiftDetailResponseDto } from '../dtos/responses/users/gift-detail.response.dto';
 import { UserGiftResponseDto } from '../dtos/responses/users/gift.response.dto';
@@ -21,21 +23,24 @@ export class GiftUserService {
   constructor(
     @InjectRepository(GiftEntity)
     private readonly giftRepository: Repository<GiftEntity>,
-    @InjectRepository(GiftCodeEntity)
-    private readonly codeRepository: Repository<GiftCodeEntity>,
-    @InjectRepository(GiftClaimEntity)
-    private readonly claimRepository: Repository<GiftClaimEntity>,
+    private readonly dataSource: DataSource,
   ) {}
 
-  async findAll(): Promise<UserGiftResponseDto[]> {
-    const gifts = await this.giftRepository.find({
+  async findAll(dto: PaginationDto): Promise<PaginatedResponseDto<UserGiftResponseDto>> {
+    const [gifts, total] = await this.giftRepository.findAndCount({
       where: { status: GiftStatus.ACTIVE },
+      skip: dto.skip,
+      take: dto.limit,
+      order: { createdAt: 'DESC' },
     });
-    return gifts.map((g) => {
-      const dto = plainToInstance(UserGiftResponseDto, g);
-      dto.hasStock = g.stock > 0;
-      return dto;
+
+    const data = gifts.map((g) => {
+      const response = plainToInstance(UserGiftResponseDto, g);
+      response.hasStock = g.stock > 0;
+      return response;
     });
+
+    return new PaginatedResponseDto(data, total, dto.page, dto.limit);
   }
 
   async findOne(id: string): Promise<UserGiftDetailResponseDto> {
@@ -52,46 +57,46 @@ export class GiftUserService {
 
   async claim(giftId: string, userId: string): Promise<ClaimedGiftResponseDto> {
     this.logger.log(`User "${userId}" is claiming gift "${giftId}"`);
-    const gift = await this.giftRepository.findOne({
-      where: { id: giftId, status: GiftStatus.ACTIVE },
-    });
-    if (!gift) {
-      throw new NotFoundException(`Gift with ID "${giftId}" not found`);
-    }
 
-    if (gift.stock <= 0) {
-      throw new BadRequestException('Gift is out of stock');
-    }
-
-    let claimCode: string | undefined;
-
-    if (gift.type !== GiftType.PHYSICAL) {
-      const codeEntity = await this.codeRepository.findOne({
-        where: { giftId: gift.id, isUsed: false },
+    return this.dataSource.transaction(async (manager) => {
+      const gift = await manager.findOne(GiftEntity, {
+        where: { id: giftId, status: GiftStatus.ACTIVE },
       });
-      if (!codeEntity) {
-        throw new BadRequestException('No codes available for this gift');
+      if (!gift) {
+        throw new NotFoundException(`Gift with ID "${giftId}" not found`);
       }
-      codeEntity.isUsed = true;
-      await this.codeRepository.save(codeEntity);
-      claimCode = codeEntity.code;
-    }
+      if (gift.stock <= 0) {
+        throw new BadRequestException('Gift is out of stock');
+      }
 
-    gift.stock -= 1;
-    await this.giftRepository.save(gift);
+      let claimCode: string | undefined;
 
-    const claim = this.claimRepository.create({
-      userId,
-      giftId: gift.id,
-      status: GiftClaimStatus.APPROVED,
-      claimedAt: new Date(),
-      ...(claimCode ? { code: claimCode } : {}),
+      if (gift.type !== GiftType.PHYSICAL) {
+        const codeEntity = await manager.findOne(GiftCodeEntity, {
+          where: { giftId: gift.id, isUsed: false },
+        });
+        if (!codeEntity) {
+          throw new BadRequestException('No codes available for this gift');
+        }
+        codeEntity.isUsed = true;
+        await manager.save(codeEntity);
+        claimCode = codeEntity.code;
+      }
+
+      gift.stock -= 1;
+      await manager.save(gift);
+
+      const claim = manager.create(GiftClaimEntity, {
+        userId,
+        giftId: gift.id,
+        status: GiftClaimStatus.APPROVED,
+        claimedAt: new Date(),
+        ...(claimCode ? { code: claimCode } : {}),
+      });
+      const savedClaim = await manager.save(claim);
+
+      this.logger.log(`Gift "${giftId}" claimed by user "${userId}", claim ID: ${savedClaim.id}`);
+      return plainToInstance(ClaimedGiftResponseDto, savedClaim);
     });
-    const savedClaim: GiftClaimEntity = await this.claimRepository.save(claim);
-
-    this.logger.log(
-      `Gift "${giftId}" claimed successfully by user "${userId}", claim ID: ${savedClaim.id}`,
-    );
-    return plainToInstance(ClaimedGiftResponseDto, savedClaim);
   }
 }

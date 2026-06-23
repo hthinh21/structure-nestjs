@@ -1,3 +1,4 @@
+// src/common/dtos/requests/pagination-request.dto.ts
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 import { Type } from 'class-transformer';
@@ -23,4 +24,8 @@ export class PaginationDto {
   @IsString()
   @IsOptional()
   search?: string;
+
+  get skip(): number {
+    return (this.page - 1) * this.limit;
+  }
 }
