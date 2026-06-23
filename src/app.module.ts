@@ -6,9 +6,9 @@ import { TypeOrmModule, type TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import appConfig from './common/config/app.config';
-import authConfig from './common/config/auth.config';
-import databaseConfig from './common/config/database.config';
+import appConfig from './common/configs/app.config';
+import authConfig from './common/configs/auth.config';
+import databaseConfig from './common/configs/database.config';
 import { GiftsModule } from './gift/gifts.module';
 
 import type { StringValue } from 'ms';
