@@ -15,7 +15,7 @@ import { GiftsModule } from './gift/gifts.module';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig, databaseConfig],
-      envFilePath: '.env', 
+      envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
