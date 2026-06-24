@@ -32,6 +32,7 @@ describe('UserService', () => {
     const mockUserRepository = {
       existsByEmail: jest.fn(),
       create: jest.fn(),
+      save: jest.fn(),
       findByEmail: jest.fn(),
       findById: jest.fn(),
     };
@@ -63,7 +64,8 @@ describe('UserService', () => {
     it('should create a user successfully', async () => {
       repository.existsByEmail.mockResolvedValue(false);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
-      repository.create.mockResolvedValue(mockUser);
+      repository.create.mockReturnValue(mockUser);
+      repository.save.mockResolvedValue(mockUser);
 
       const result = await service.create(createDto);
 
@@ -78,7 +80,8 @@ describe('UserService', () => {
         role: ROLES.USER,
         status: UserStatus.ACTIVE,
       });
-      expect(result).toEqual(mockUser);
+      expect(repository.save).toHaveBeenCalledWith(mockUser);
+      expect(result.id).toBe(mockUser.id);
     });
 
     it('should throw ConflictException if email exists', async () => {

@@ -1,8 +1,7 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 
 import { plainToInstance } from 'class-transformer';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 import { PaginationDto } from '../../common/dtos/requests/pagination-request.dto';
 import { PaginatedResponseDto } from '../../common/dtos/responses/paginated-response.dto';
@@ -16,19 +15,19 @@ import { GiftEntity } from '../entities/gift.entity';
 import { GiftClaimStatus } from '../enums/gift-claim-status.enum';
 import { GiftStatus } from '../enums/gift-status.enum';
 import { GiftType } from '../enums/gift-type.enum';
+import { GiftRepository } from '../repositories/gift.repository';
 
 @Injectable()
 export class GiftUserService {
   private readonly logger = new Logger(GiftUserService.name);
 
   constructor(
-    @InjectRepository(GiftEntity)
-    private readonly giftRepository: Repository<GiftEntity>,
+    private readonly giftRepository: GiftRepository,
     private readonly dataSource: DataSource,
   ) {}
 
   async findAll(dto: PaginationDto): Promise<PaginatedResponseDto<UserGiftResponseDto>> {
-    const paginated = await paginate(this.giftRepository, dto, {
+    const paginated = await paginate(this.giftRepository.getRawRepository(), dto, {
       where: { status: GiftStatus.ACTIVE },
       order: { createdAt: 'DESC' },
     });

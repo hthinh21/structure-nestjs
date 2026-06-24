@@ -1,19 +1,19 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
 
-import { DataSource, type EntityManager, type Repository } from 'typeorm';
+import { DataSource, type EntityManager } from 'typeorm';
 
-import { GiftEntity } from '../entities/gift.entity';
 import { GiftStatus } from '../enums/gift-status.enum';
 import { GiftType } from '../enums/gift-type.enum';
+import { GiftRepository } from '../repositories/gift.repository';
 import { GiftUserService } from '../services/gift.user.service';
 
 import type { GiftCodeEntity } from '../entities/gift-code.entity';
+import type { GiftEntity } from '../entities/gift.entity';
 
 describe('GiftUserService', () => {
   let service: GiftUserService;
-  let giftRepository: jest.Mocked<Repository<GiftEntity>>;
+  let giftRepository: jest.Mocked<GiftRepository>;
   let dataSource: jest.Mocked<DataSource>;
 
   const mockGift: GiftEntity = {
@@ -45,7 +45,9 @@ describe('GiftUserService', () => {
     const mockGiftRepo = {
       findAndCount: jest.fn(),
       findOne: jest.fn(),
+      getRawRepository: jest.fn(),
     };
+    mockGiftRepo.getRawRepository.mockReturnValue(mockGiftRepo);
 
     const mockManager = {
       findOne: jest.fn(),
@@ -75,13 +77,13 @@ describe('GiftUserService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GiftUserService,
-        { provide: getRepositoryToken(GiftEntity), useValue: mockGiftRepo },
+        { provide: GiftRepository, useValue: mockGiftRepo },
         { provide: DataSource, useValue: mockDataSourceInstance },
       ],
     }).compile();
 
     service = module.get<GiftUserService>(GiftUserService);
-    giftRepository = module.get(getRepositoryToken(GiftEntity));
+    giftRepository = module.get(GiftRepository);
     dataSource = module.get(DataSource);
   });
 

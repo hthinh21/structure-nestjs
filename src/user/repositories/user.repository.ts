@@ -3,14 +3,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { Repository } from 'typeorm';
 
+import { BaseRepository } from '../../common/bases/base.repository';
 import { UserEntity } from '../entities/user.entity';
 
 @Injectable()
-export class UserRepository {
+export class UserRepository extends BaseRepository<UserEntity> {
   constructor(
     @InjectRepository(UserEntity)
-    private readonly repository: Repository<UserEntity>,
-  ) {}
+    private readonly userRepo: Repository<UserEntity>,
+  ) {
+    super(userRepo);
+  }
 
   async findByEmail(email: string): Promise<UserEntity | null> {
     return this.repository.findOne({
@@ -40,10 +43,5 @@ export class UserRepository {
   async existsByEmail(email: string): Promise<boolean> {
     const count = await this.repository.count({ where: { email } });
     return count > 0;
-  }
-
-  async create(data: Partial<UserEntity>): Promise<UserEntity> {
-    const user = this.repository.create(data);
-    return this.repository.save(user);
   }
 }

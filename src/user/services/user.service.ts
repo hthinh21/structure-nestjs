@@ -26,12 +26,14 @@ export class UserService {
 
     const passwordHash = await bcrypt.hash(data.password, USER_CONSTANTS.PASSWORD_SALT_ROUNDS);
 
-    const user = await this.userRepository.create({
+    const userEntity = this.userRepository.create({
       email: data.email,
       passwordHash,
       role: data.role ?? ROLES.USER,
       status: UserStatus.ACTIVE,
     });
+
+    const user = await this.userRepository.save(userEntity);
 
     this.logger.log(`User created successfully: ${user.id}`);
     return user;

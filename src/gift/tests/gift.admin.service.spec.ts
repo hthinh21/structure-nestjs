@@ -1,19 +1,21 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
 
-import { DataSource, type Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 
-import { GiftCodeEntity } from '../entities/gift-code.entity';
-import { GiftEntity } from '../entities/gift.entity';
 import { GiftStatus } from '../enums/gift-status.enum';
 import { GiftType } from '../enums/gift-type.enum';
+import { GiftCodeRepository } from '../repositories/gift-code.repository';
+import { GiftRepository } from '../repositories/gift.repository';
 import { GiftAdminService } from '../services/gift.admin.service';
+
+import type { GiftCodeEntity } from '../entities/gift-code.entity';
+import type { GiftEntity } from '../entities/gift.entity';
 
 describe('GiftAdminService', () => {
   let service: GiftAdminService;
-  let giftRepository: jest.Mocked<Repository<GiftEntity>>;
-  let codeRepository: jest.Mocked<Repository<GiftCodeEntity>>;
+  let giftRepository: jest.Mocked<GiftRepository>;
+  let codeRepository: jest.Mocked<GiftCodeRepository>;
 
   const mockGift: GiftEntity = {
     id: 'gift-id-123',
@@ -35,25 +37,31 @@ describe('GiftAdminService', () => {
       save: jest.fn(),
       findAndCount: jest.fn(),
       findOne: jest.fn(),
+      getRawRepository: jest.fn(),
     };
+    mockGiftRepo.getRawRepository.mockReturnValue(mockGiftRepo);
+
     const mockCodeRepo = {
       create: jest.fn().mockImplementation((dto: unknown) => dto as GiftCodeEntity),
       save: jest.fn(),
+      getRawRepository: jest.fn(),
     };
+    mockCodeRepo.getRawRepository.mockReturnValue(mockCodeRepo);
+
     const mockDataSource = {};
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GiftAdminService,
-        { provide: getRepositoryToken(GiftEntity), useValue: mockGiftRepo },
-        { provide: getRepositoryToken(GiftCodeEntity), useValue: mockCodeRepo },
+        { provide: GiftRepository, useValue: mockGiftRepo },
+        { provide: GiftCodeRepository, useValue: mockCodeRepo },
         { provide: DataSource, useValue: mockDataSource },
       ],
     }).compile();
 
     service = module.get<GiftAdminService>(GiftAdminService);
-    giftRepository = module.get(getRepositoryToken(GiftEntity));
-    codeRepository = module.get(getRepositoryToken(GiftCodeEntity));
+    giftRepository = module.get(GiftRepository);
+    codeRepository = module.get(GiftCodeRepository);
   });
 
   afterEach(() => {
@@ -125,7 +133,7 @@ describe('GiftAdminService', () => {
   describe('update', () => {
     it('should update gift properties', async () => {
       giftRepository.findOne.mockResolvedValue(mockGift);
-      giftRepository.save.mockImplementation(async (g) => g as unknown as GiftEntity);
+      giftRepository.save.mockImplementation(async (g) => g);
 
       const updateDto = { name: 'Voucher 200k', stock: 10 };
       const result = await service.update('gift-id-123', updateDto);

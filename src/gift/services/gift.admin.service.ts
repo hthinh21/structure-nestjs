@@ -1,8 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 
 import { plainToInstance } from 'class-transformer';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 import { PaginationDto } from '../../common/dtos/requests/pagination-request.dto';
 import { PaginatedResponseDto } from '../../common/dtos/responses/paginated-response.dto';
@@ -12,18 +11,17 @@ import { CreateGiftRequestDto } from '../dtos/requests/admins/create.request.dto
 import { UpdateGiftRequestDto } from '../dtos/requests/admins/update.request.dto';
 import { AdminGiftDetailResponseDto } from '../dtos/responses/admins/gift-detail.response.dto';
 import { AdminGiftResponseDto } from '../dtos/responses/admins/gift.response.dto';
-import { GiftCodeEntity } from '../entities/gift-code.entity';
 import { GiftEntity } from '../entities/gift.entity';
+import { GiftCodeRepository } from '../repositories/gift-code.repository';
+import { GiftRepository } from '../repositories/gift.repository';
 
 @Injectable()
 export class GiftAdminService {
   private readonly logger = new Logger(GiftAdminService.name);
 
   constructor(
-    @InjectRepository(GiftEntity)
-    private readonly giftRepository: Repository<GiftEntity>,
-    @InjectRepository(GiftCodeEntity)
-    private readonly codeRepository: Repository<GiftCodeEntity>,
+    private readonly giftRepository: GiftRepository,
+    private readonly codeRepository: GiftCodeRepository,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -44,7 +42,7 @@ export class GiftAdminService {
           giftId: saved.id,
         }),
       );
-      await this.codeRepository.save(codes);
+      await this.codeRepository.getRawRepository().save(codes);
     }
 
     this.logger.log(`Gift created successfully with ID: ${saved.id}`);
@@ -53,7 +51,7 @@ export class GiftAdminService {
 
   async findAll(dto: PaginationDto): Promise<PaginatedResponseDto<AdminGiftResponseDto>> {
     return paginate(
-      this.giftRepository,
+      this.giftRepository.getRawRepository(),
       dto,
       { order: { createdAt: 'DESC' } },
       AdminGiftResponseDto,

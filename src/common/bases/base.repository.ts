@@ -12,12 +12,19 @@ export abstract class BaseRepository<T extends BaseEntity> {
     return this.repository.findOne(options);
   }
 
-  async create(entity: Partial<T>): Promise<T> {
-    const newEntity = this.repository.create(entity as T);
-    return this.repository.save(newEntity);
+  create(entity: Partial<T>): T {
+    return this.repository.create(entity as T);
   }
 
   async save(entity: T): Promise<T> {
     return this.repository.save(entity);
+  }
+
+  async findAndCount(options?: FindManyOptions<T>): Promise<[T[], number]> {
+    return this.repository.findAndCount(options);
+  }
+
+  getRawRepository(): Repository<T> {
+    return this.repository;
   }
 }
