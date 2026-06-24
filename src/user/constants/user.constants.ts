@@ -1,0 +1,4 @@
+export const USER_CONSTANTS = {
+  PASSWORD_SALT_ROUNDS: 10,
+  MIN_PASSWORD_LENGTH: 8,
+} as const;

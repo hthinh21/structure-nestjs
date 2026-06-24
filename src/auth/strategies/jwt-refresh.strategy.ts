@@ -8,9 +8,9 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AUTH_CONSTANTS } from '../constants/auth.constants';
 
 import type { IAuthConfig } from '../../common/configs/auth.config';
-import type { IJwtPayload } from '../interfaces/jwt.interface';
+import type { IJwtPayload, IUserValidated } from '../interfaces/jwt.interface';
 
-export interface IRefreshTokenPayload extends IJwtPayload {
+export interface IRefreshTokenPayload extends IUserValidated {
   refreshToken: string;
 }
 
@@ -34,6 +34,11 @@ export class JwtRefreshStrategy extends PassportStrategy(
       throw new UnauthorizedException('Refresh token not found');
     }
     const refreshToken = authHeader.replace('Bearer ', '').trim();
-    return { ...payload, refreshToken };
+    return {
+      id: payload.sub,
+      email: payload.email,
+      role: payload.role,
+      refreshToken,
+    };
   }
 }

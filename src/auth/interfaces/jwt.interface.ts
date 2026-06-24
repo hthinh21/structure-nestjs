@@ -13,3 +13,9 @@ export interface IUserValidated {
   email: string;
   role: RoleType;
 }
+
+export interface ITokenPayloadSource {
+  id: string;
+  email: string;
+  role: RoleType;
+}

@@ -6,9 +6,12 @@ import { TypeOrmModule, type TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AuthModule } from './auth/auth.module';
 import appConfig from './common/configs/app.config';
 import authConfig from './common/configs/auth.config';
 import databaseConfig from './common/configs/database.config';
+import redisConfig from './common/configs/redis.config';
+import { RedisModule } from './common/redis/redis.module';
 import { GiftsModule } from './gift/gifts.module';
 
 import type { StringValue } from 'ms';
@@ -17,7 +20,7 @@ import type { StringValue } from 'ms';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, authConfig, databaseConfig],
+      load: [appConfig, authConfig, databaseConfig, redisConfig],
       envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync({
@@ -25,6 +28,8 @@ import type { StringValue } from 'ms';
       useFactory: (configService: ConfigService): TypeOrmModuleOptions =>
         configService.getOrThrow<TypeOrmModuleOptions>('database'),
     }),
+    RedisModule,
+
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       global: true,
@@ -36,6 +41,7 @@ import type { StringValue } from 'ms';
         },
       }),
     }),
+    AuthModule,
     GiftsModule,
   ],
   controllers: [AppController],

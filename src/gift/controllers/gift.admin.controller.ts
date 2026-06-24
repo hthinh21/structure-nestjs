@@ -6,8 +6,8 @@ import {
   HttpStatus,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
-  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -56,7 +56,7 @@ export class GiftAdminController {
     return this.adminService.findOne(id);
   }
 
-  @Put(':id')
+  @Patch(':id')
   @ApiOperation({ summary: 'Update a gift' })
   @ApiResponse({ status: HttpStatus.OK, type: AdminGiftResponseDto })
   async update(

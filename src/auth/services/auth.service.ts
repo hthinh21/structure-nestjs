@@ -1,54 +1,95 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
 import { plainToInstance } from 'class-transformer';
 
-import type { LoginRequestDto } from '../dtos/requests/login.request.dto';
+import { RedisService } from '../../common/redis/redis.service';
+import { UserService } from '../../user/services/user.service';
 import { TokenResponseDto } from '../dtos/responses/token.response.dto';
-import type { IJwtPayload, IUserValidated } from '../interfaces/jwt.interface';
+
+import type { IAuthConfig } from '../../common/configs/auth.config';
+import type { LoginRequestDto } from '../dtos/requests/login.request.dto';
+import type { RegisterRequestDto } from '../dtos/requests/register.request.dto';
+import type { IJwtPayload, ITokenPayloadSource, IUserValidated } from '../interfaces/jwt.interface';
+import type { StringValue } from 'ms';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly userService: UserService,
+    private readonly redisService: RedisService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  async register(dto: RegisterRequestDto): Promise<TokenResponseDto> {
+    this.logger.log(`Register attempt for email: ${dto.email}`);
+
+    const user = await this.userService.create({
+      email: dto.email,
+      password: dto.password,
+    });
+
+    const tokens = await this.generateTokens(user);
+    this.logger.log(`User registered successfully: ${user.id}`);
+    return tokens;
+  }
 
   async login(dto: LoginRequestDto): Promise<TokenResponseDto> {
     this.logger.log(`Login attempt for email: ${dto.email}`);
 
-    // TODO: Replace with real user lookup from UserModule/UserService
-    // For now this is a placeholder — inject UserService when available
-    const mockUser: IUserValidated = {
-      id: 'mock-user-id',
-      email: dto.email,
-      role: 'USER',
-    };
+    const user = await this.userService.validateCredentials(dto.email, dto.password);
+    const tokens = await this.generateTokens(user);
 
-    if (dto.password !== 'password123') {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    const tokens = await this.generateTokens(mockUser);
-    this.logger.log(`Login successful for user: ${mockUser.id}`);
+    this.logger.log(`Login successful for user: ${user.id}`);
     return tokens;
   }
 
-  async refresh(user: IUserValidated): Promise<TokenResponseDto> {
+  async refresh(user: IUserValidated & { refreshToken?: string }): Promise<TokenResponseDto> {
     this.logger.log(`Token refresh for user: ${user.id}`);
+
+    if (!user.refreshToken) {
+      throw new UnauthorizedException('Refresh token is required');
+    }
+
+    const storedToken = await this.redisService.get(`auth:refresh:${user.id}`);
+    if (!storedToken || storedToken !== user.refreshToken) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+
     return this.generateTokens(user);
   }
 
-  private async generateTokens(user: IUserValidated): Promise<TokenResponseDto> {
-    const payload: Omit<IJwtPayload, 'iat' | 'exp'> = {
+  async logout(userId: string): Promise<void> {
+    this.logger.log(`User logging out: ${userId}`);
+    await this.redisService.del(`auth:refresh:${userId}`);
+  }
+
+  private async generateTokens(user: ITokenPayloadSource): Promise<TokenResponseDto> {
+    const payload: IJwtPayload = {
       sub: user.id,
       email: user.email,
       role: user.role,
     };
 
+    const authConfig = this.configService.getOrThrow<IAuthConfig>('auth');
+
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload),
-      this.jwtService.signAsync(payload, { expiresIn: '7d' }),
+      this.jwtService.signAsync(payload, {
+        secret: authConfig.jwtSecret,
+        expiresIn: authConfig.jwtExpiresIn as StringValue,
+      }),
+      this.jwtService.signAsync(payload, {
+        secret: authConfig.jwtRefreshSecret,
+        expiresIn: authConfig.jwtRefreshExpiresIn as StringValue,
+      }),
     ]);
+
+    // Save refresh token to Redis with 7 days TTL (604800 seconds)
+    await this.redisService.set(`auth:refresh:${user.id}`, refreshToken, 604800);
 
     return plainToInstance(TokenResponseDto, {
       accessToken,
