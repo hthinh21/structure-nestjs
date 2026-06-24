@@ -6,6 +6,7 @@ import { DataSource, Repository } from 'typeorm';
 
 import { PaginationDto } from '../../common/dtos/requests/pagination-request.dto';
 import { PaginatedResponseDto } from '../../common/dtos/responses/paginated-response.dto';
+import { paginate } from '../../common/utils/pagination.util';
 import { ClaimedGiftResponseDto } from '../dtos/responses/users/claimed-gift.response.dto';
 import { UserGiftDetailResponseDto } from '../dtos/responses/users/gift-detail.response.dto';
 import { UserGiftResponseDto } from '../dtos/responses/users/gift.response.dto';
@@ -27,20 +28,18 @@ export class GiftUserService {
   ) {}
 
   async findAll(dto: PaginationDto): Promise<PaginatedResponseDto<UserGiftResponseDto>> {
-    const [gifts, total] = await this.giftRepository.findAndCount({
+    const paginated = await paginate(this.giftRepository, dto, {
       where: { status: GiftStatus.ACTIVE },
-      skip: dto.skip,
-      take: dto.limit,
       order: { createdAt: 'DESC' },
     });
 
-    const data = gifts.map((g) => {
+    const data = (paginated.data as unknown as GiftEntity[]).map((g) => {
       const response = plainToInstance(UserGiftResponseDto, g);
       response.hasStock = g.stock > 0;
       return response;
     });
 
-    return new PaginatedResponseDto(data, total, dto.page, dto.limit);
+    return new PaginatedResponseDto(data, paginated.meta.total, dto.page, dto.limit);
   }
 
   async findOne(id: string): Promise<UserGiftDetailResponseDto> {

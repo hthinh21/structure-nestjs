@@ -1,4 +1,3 @@
-// src/common/dtos/requests/pagination-request.dto.ts
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 import { Type } from 'class-transformer';

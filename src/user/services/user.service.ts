@@ -58,4 +58,8 @@ export class UserService {
   async findById(id: string): Promise<UserEntity | null> {
     return this.userRepository.findById(id);
   }
+
+  async existsByEmail(email: string): Promise<boolean> {
+    return this.userRepository.existsByEmail(email);
+  }
 }

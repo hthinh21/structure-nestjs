@@ -13,6 +13,7 @@ import databaseConfig from './common/configs/database.config';
 import redisConfig from './common/configs/redis.config';
 import { RedisModule } from './common/redis/redis.module';
 import { GiftsModule } from './gift/gifts.module';
+import { HealthModule } from './health/health.module';
 
 import type { StringValue } from 'ms';
 
@@ -43,6 +44,7 @@ import type { StringValue } from 'ms';
     }),
     AuthModule,
     GiftsModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -6,6 +6,7 @@ import { plainToInstance } from 'class-transformer';
 
 import { RedisService } from '../../common/redis/redis.service';
 import { UserService } from '../../user/services/user.service';
+import { AUTH_CONSTANTS } from '../constants/auth.constants';
 import { TokenResponseDto } from '../dtos/responses/token.response.dto';
 
 import type { IAuthConfig } from '../../common/configs/auth.config';
@@ -89,7 +90,11 @@ export class AuthService {
     ]);
 
     // Save refresh token to Redis with 7 days TTL (604800 seconds)
-    await this.redisService.set(`auth:refresh:${user.id}`, refreshToken, 604800);
+    await this.redisService.set(
+      `auth:refresh:${user.id}`,
+      refreshToken,
+      AUTH_CONSTANTS.REDIS_REFRESH_TOKEN_TTL,
+    );
 
     return plainToInstance(TokenResponseDto, {
       accessToken,

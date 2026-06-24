@@ -6,6 +6,7 @@ import { DataSource, Repository } from 'typeorm';
 
 import { PaginationDto } from '../../common/dtos/requests/pagination-request.dto';
 import { PaginatedResponseDto } from '../../common/dtos/responses/paginated-response.dto';
+import { paginate } from '../../common/utils/pagination.util';
 import { generateRandomString } from '../../common/utils/string.util';
 import { CreateGiftRequestDto } from '../dtos/requests/admins/create.request.dto';
 import { UpdateGiftRequestDto } from '../dtos/requests/admins/update.request.dto';
@@ -51,17 +52,11 @@ export class GiftAdminService {
   }
 
   async findAll(dto: PaginationDto): Promise<PaginatedResponseDto<AdminGiftResponseDto>> {
-    const [gifts, total] = await this.giftRepository.findAndCount({
-      skip: dto.skip,
-      take: dto.limit,
-      order: { createdAt: 'DESC' },
-    });
-
-    return new PaginatedResponseDto(
-      plainToInstance(AdminGiftResponseDto, gifts),
-      total,
-      dto.page,
-      dto.limit,
+    return paginate(
+      this.giftRepository,
+      dto,
+      { order: { createdAt: 'DESC' } },
+      AdminGiftResponseDto,
     );
   }
 

@@ -12,7 +12,7 @@ export default tseslint.config([
   // Ignored paths
   // ─────────────────────────────────────────────
   {
-    ignores: ['eslint.config.mjs', 'dist/**', 'coverage/**', 'node_modules/**'],
+    ignores: ['eslint.config.mjs', 'dist/**', 'coverage/**', 'node_modules/**', 'src/database/typeorm/migrations/**'],
   },
 
   // ─────────────────────────────────────────────
