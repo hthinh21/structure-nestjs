@@ -1,5 +1,7 @@
 import { registerAs } from '@nestjs/config';
 
+import { requireEnv } from './config.helper';
+
 export interface IAuthConfig {
   jwtSecret: string;
   jwtExpiresIn: string;
@@ -10,9 +12,9 @@ export interface IAuthConfig {
 export default registerAs(
   'auth',
   (): IAuthConfig => ({
-    jwtSecret: process.env.JWT_SECRET!,
-    jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '15m',
-    jwtRefreshSecret: process.env.JWT_REFRESH_SECRET!,
-    jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
+    jwtSecret: requireEnv('JWT_SECRET'),
+    jwtExpiresIn: requireEnv('JWT_EXPIRES_IN'),
+    jwtRefreshSecret: requireEnv('JWT_REFRESH_SECRET'),
+    jwtRefreshExpiresIn: requireEnv('JWT_REFRESH_EXPIRES_IN'),
   }),
 );

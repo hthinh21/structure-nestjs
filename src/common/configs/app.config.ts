@@ -1,5 +1,7 @@
 import { registerAs } from '@nestjs/config';
 
+import { requireEnv } from './config.helper';
+
 export interface IAppConfig {
   port: number;
   environment: string;
@@ -8,7 +10,7 @@ export interface IAppConfig {
 export default registerAs(
   'app',
   (): IAppConfig => ({
-    port: parseInt(process.env.PORT ?? '3000', 10),
-    environment: process.env.NODE_ENV ?? 'development',
+    port: parseInt(requireEnv('PORT')),
+    environment: requireEnv('NODE_ENV'),
   }),
 );
