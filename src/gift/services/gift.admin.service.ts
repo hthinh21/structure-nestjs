@@ -4,9 +4,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import { DataSource, Repository } from 'typeorm';
 
-import { PaginationDto } from 'src/common/dtos/requests/pagination-request.dto';
-import { PaginatedResponseDto } from 'src/common/dtos/responses/paginated-response.dto';
-
+import { PaginationDto } from '../../common/dtos/requests/pagination-request.dto';
+import { PaginatedResponseDto } from '../../common/dtos/responses/paginated-response.dto';
 import { generateRandomString } from '../../common/utils/string.util';
 import { CreateGiftRequestDto } from '../dtos/requests/admins/create.request.dto';
 import { UpdateGiftRequestDto } from '../dtos/requests/admins/update.request.dto';

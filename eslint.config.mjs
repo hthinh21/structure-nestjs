@@ -343,4 +343,13 @@ export default tseslint.config([
       'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
   },
+  {
+    files: ['**/*.spec.ts', 'test/**/*.ts'],
+    rules: {
+      '@typescript-eslint/unbound-method': 'off',
+      '@typescript-eslint/consistent-type-assertions': 'off',
+      '@typescript-eslint/require-await': 'off',
+      'max-lines-per-function': 'off',
+    },
+  },
 ]);
