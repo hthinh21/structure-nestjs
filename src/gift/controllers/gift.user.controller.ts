@@ -12,6 +12,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Idempotent } from '../../common/decorators/idempotent.decorator';
 import { PaginationDto } from '../../common/dtos/requests/pagination-request.dto';
 import { PaginatedResponseDto } from '../../common/dtos/responses/paginated-response.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -46,6 +47,7 @@ export class GiftUserController {
   }
 
   @Post(':id/claim')
+  @Idempotent({ ttlSeconds: 60 })
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Claim a gift by ID' })
   @ApiResponse({ status: HttpStatus.CREATED, type: ClaimedGiftResponseDto })

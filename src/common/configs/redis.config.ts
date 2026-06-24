@@ -13,6 +13,6 @@ export default registerAs(
   (): IRedisConfig => ({
     host: requireEnv('REDIS_HOST'),
     port: parseInt(requireEnv('REDIS_PORT'), 10),
-    password: process.env.REDIS_PASSWORD || undefined,
+    password: requireEnv('REDIS_PASSWORD') || undefined,
   }),
 );

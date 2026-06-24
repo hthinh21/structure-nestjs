@@ -11,14 +11,14 @@ export default registerAs('database', (): TypeOrmModuleOptions => {
 
   return {
     type: 'postgres',
-    host: process.env.DB_HOST ?? 'localhost',
-    port: parseInt(process.env.DB_PORT ?? '5432', 10),
+    host: requireEnv('DB_HOST'),
+    port: parseInt(requireEnv('DB_PORT'), 10),
     username: requireEnv('DB_USERNAME'),
     password: requireEnv('DB_PASSWORD'),
     database: requireEnv('DB_DATABASE'),
     entities: [join(__dirname, '..', '..', '**', '*.entity.{ts,js}')],
     migrations: [join(__dirname, '..', '..', 'database', 'typeorm', 'migrations', '*.{ts,js}')],
-    synchronize: isDevelopment,
+    synchronize: false,
     migrationsRun: isProduction,
     logging: isDevelopment,
     ssl: isProduction ? { rejectUnauthorized: false } : false,

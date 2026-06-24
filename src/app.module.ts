@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { JwtModule, type JwtModuleOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule, type TypeOrmModuleOptions } from '@nestjs/typeorm';
@@ -11,6 +12,7 @@ import appConfig from './common/configs/app.config';
 import authConfig from './common/configs/auth.config';
 import databaseConfig from './common/configs/database.config';
 import redisConfig from './common/configs/redis.config';
+import { IdempotencyInterceptor } from './common/interceptors/idempotency.interceptor';
 import { RedisModule } from './common/redis/redis.module';
 import { GiftsModule } from './gift/gifts.module';
 import { HealthModule } from './health/health.module';
@@ -47,6 +49,12 @@ import type { StringValue } from 'ms';
     HealthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: IdempotencyInterceptor,
+    },
+  ],
 })
 export class AppModule {}

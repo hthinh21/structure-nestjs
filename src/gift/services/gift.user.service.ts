@@ -60,6 +60,7 @@ export class GiftUserService {
     return this.dataSource.transaction(async (manager) => {
       const gift = await manager.findOne(GiftEntity, {
         where: { id: giftId, status: GiftStatus.ACTIVE },
+        lock: { mode: 'pessimistic_write' },
       });
       if (!gift) {
         throw new NotFoundException(`Gift with ID "${giftId}" not found`);
@@ -73,6 +74,7 @@ export class GiftUserService {
       if (gift.type !== GiftType.PHYSICAL) {
         const codeEntity = await manager.findOne(GiftCodeEntity, {
           where: { giftId: gift.id, isUsed: false },
+          lock: { mode: 'pessimistic_write' },
         });
         if (!codeEntity) {
           throw new BadRequestException('No codes available for this gift');
